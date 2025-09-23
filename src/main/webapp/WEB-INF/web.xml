@@ -5,17 +5,25 @@
          version="3.0">
 
     <!-- Description de l'application -->
-    <display-name>Mon Projet Servlet</display-name>
+    <display-name>Mon Projet Servlet test</display-name>
 
     <!-- Configuration du Servlet -->
     <servlet>
         <servlet-name>HelloServlet</servlet-name>
         <servlet-class>servlet.HelloServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>FrontServlet</servlet-name>
+        <servlet-class>servlet.FrontServlet</servlet-class>
+    </servlet>
 
     <!-- Mappage du Servlet -->
     <servlet-mapping>
         <servlet-name>HelloServlet</servlet-name>
+        <url-pattern>/Hello</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>FrontServlet</servlet-name>
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 
