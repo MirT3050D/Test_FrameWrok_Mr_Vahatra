@@ -28,11 +28,11 @@ xcopy %WEBAPP_PATH% %BUILD_PATH% /S /Y
 rem Créer le fichier .war de ce qui se trouve dans build
 echo Création du fichier WAR...
 cd %BUILD_PATH%
-jar -cvf HelloServlet.war *
+jar -cvf TestrameWork.war *
 
 rem Déplacer le fichier .war dans le répertoire webapps de Tomcat
 echo Déploiement du fichier WAR dans Tomcat...
-move %BUILD_PATH%\HelloServlet.war %CATALINA_HOME%\webapps
+move %BUILD_PATH%\TestrameWork.war %CATALINA_HOME%\webapps
 
 echo Projet Servlet déployé et Tomcat prêt à démarrer.
 pause
