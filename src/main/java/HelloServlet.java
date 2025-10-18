@@ -1,22 +1,22 @@
-package servlet;
-import java.io.*;
-import javax.servlet.http.*;
+// package servlet;
+// import java.io.*;
+// import javax.servlet.http.*;
 
-public class HelloServlet extends HttpServlet {
+// public class HelloServlet extends HttpServlet {
 
-    String message;
+//     String message;
 
-    public void init() {
-        message = "Hello !";
-    }
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setContentType("text/html");
+//     public void init() {
+//         message = "Hello !";
+//     }
+//     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+//         response.setContentType("text/html");
 
-        // Hello
-        PrintWriter out = response.getWriter();
-        out.println("<html><body>");
-        out.println("<h1>" + message + "</h1>");
-        out.println("</body></html>");
-    }
+//         // Hello
+//         PrintWriter out = response.getWriter();
+//         out.println("<html><body>");
+//         out.println("<h1>" + message + "</h1>");
+//         out.println("</body></html>");
+//     }
 
-}
+// }
