@@ -15,6 +15,7 @@
     <servlet>
         <servlet-name>FrontServlet</servlet-name>
         <servlet-class>servlet.FrontServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
 
     <!-- Mappage du Servlet -->

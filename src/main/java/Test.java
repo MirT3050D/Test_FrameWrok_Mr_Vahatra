@@ -1,5 +1,6 @@
 package test;
 import annotation.*;
+import scan.*;
 @ClasseAnnotation(value = "Test de l'annotation de classe")
 public class Test {
     public Test(){}
