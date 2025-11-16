@@ -5,8 +5,14 @@ import scan.*;
 public class Test {
     public Test(){}
     @MethodeAnnotation(value = "/test")
-    public static void compter()
+    public static String compter()
     {
         System.out.println("Bonjour le monde !");
+        return "tu sais compter";
+    }
+    @MethodeAnnotation(value = "/hello")
+    public static void hello()
+    {
+        System.out.println("Hello World!");
     }
 }
