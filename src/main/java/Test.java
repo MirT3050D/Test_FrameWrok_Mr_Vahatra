@@ -42,4 +42,9 @@ public class Test {
     {
         return "étudiant numéro ";
     }
+    @MethodeAnnotation(value = "/etudiant/numero")
+    public String etudiant(int id)
+    {
+        return "étudiant numéro " + id;
+    }
 }

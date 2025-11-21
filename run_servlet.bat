@@ -27,7 +27,8 @@ if exist "%SOURCES%" del /f /q "%SOURCES%"
 for /R "%PROJECT_PATH%src\main\java" %%F in (*.java) do @echo %%~fF>>"%SOURCES%"
 
 rem Compiler en utilisant la liste de sources (gère les sous-dossiers et packages)
-javac -d "%BUILD_PATH%\WEB-INF\classes" -classpath "%LIB_PATH%\servlet-api.jar;%LIB_PATH%\*" @"%SOURCES%"
+rem Ajout de -parameters pour préserver les noms des paramètres (requis pour le binding automatique)
+javac -parameters -d "%BUILD_PATH%\WEB-INF\classes" -classpath "%LIB_PATH%\servlet-api.jar;%LIB_PATH%\*" @"%SOURCES%"
 
 rem Copier le contenu de webapp dans build de manière récursive
 echo Copie récursive des fichiers webapp...
