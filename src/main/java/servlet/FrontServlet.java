@@ -110,10 +110,64 @@ public class FrontServlet extends HttpServlet {
         resp.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = resp.getWriter()) {
             out.println("<html><head><title>Test</title></head><body><h1>Check d'url </h1>");
+<<<<<<< Updated upstream
             if (found) {
                 out.println("<h2>Route trouvée</h2>");
                 out.println("<p>Classe: " + foundClass + "</p>");
                 out.println("<p>Méthode: " + foundMethod + "</p>");
+=======
+            if (found && foundClassRef != null && foundMethodRef != null) {
+                // Tenter d'invoquer la méthode trouvée
+                try {
+                    foundMethodRef.setAccessible(true);
+                    Object target = null;
+                    if (!Modifier.isStatic(foundMethodRef.getModifiers())) {
+                        // créer une instance via constructeur sans argument
+                        target = foundClassRef.getDeclaredConstructor().newInstance();
+                    }
+
+                    Object result = null;
+                    if (foundMethodRef.getParameterCount() == 0) {
+                        result = foundMethodRef.invoke(target);
+                    } else if (foundMethodRef.getParameterCount() == 1) {
+                        Class<?> paramType = foundMethodRef.getParameterTypes()[0];
+                        if (Map.class.isAssignableFrom(paramType)) {
+                            // Passer les paramètres d'URL extraits
+                            result = foundMethodRef.invoke(target, urlParams);
+                        }
+                    }
+
+                    // Si la méthode retourne un ModelView, dispatcher vers la vue
+                    if (result instanceof ModelView) {
+                        ModelView modelView = (ModelView) result;
+                        String view = modelView.getView();
+                        if (view != null && !view.isEmpty()) {
+                            // Passer les données du ModelView vers la requête
+                            Map<String, Object> data = modelView.getData();
+                            if (data != null) {
+                                for (Map.Entry<String, Object> entry : data.entrySet()) {
+                                    req.setAttribute(entry.getKey(), entry.getValue());
+                                }
+                            }
+                            RequestDispatcher rd = req.getRequestDispatcher(view);
+                            rd.forward(req, resp);
+                            return;
+                        }
+                    } else if (result instanceof String) {
+                        out.println("<h2>Résultat</h2>");
+                        out.println("<p>" + (String) result + "</p>");
+                    } else {
+                        // fallback: infos de la méthode
+                        out.println("<h2>Route trouvée</h2>");
+                        out.println("<p>Classe: " + foundClassRef.getName() + "</p>");
+                        out.println("<p>Méthode: " + foundMethodRef.getName() + "</p>");
+                    }
+                } catch (Throwable invokeError) {
+                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    out.println("<h2>500 - Erreur invocation</h2>");
+                    out.println("<pre>" + invokeError + "</pre>");
+                }
+>>>>>>> Stashed changes
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 out.println("<h2>404 - Not found</h2>");

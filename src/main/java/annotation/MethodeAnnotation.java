@@ -10,3 +10,4 @@ import java.lang.annotation.ElementType;
 public @interface MethodeAnnotation {
     String value();        // ex: "/home"
 }
+     
