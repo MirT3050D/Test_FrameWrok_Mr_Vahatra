@@ -1,5 +1,6 @@
 package test;
 import annotation.*;
+import modelview.ModelView;
 import scan.*;
 @ClasseAnnotation(value = "Test de l'annotation de classe")
 public class Test {
@@ -14,5 +15,15 @@ public class Test {
     public static void hello()
     {
         System.out.println("Hello World!");
+    }
+    @MethodeAnnotation(value = "/page")
+    public ModelView page()
+    {
+        return new ModelView("/test.jsp");
+    }
+    @MethodeAnnotation(value = "/etudiant/{id}")
+    public String etudiant()
+    {
+        return "étudiant numéro ";
     }
 }
