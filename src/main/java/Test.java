@@ -38,13 +38,18 @@ public class Test {
         return mv;
     }
     @MethodeAnnotation(value = "/etudiant/{id}")
-    public String etudiant()
+    public String etudiantParId(int id)
     {
-        return "étudiant numéro ";
+        return "Étudiant avec ID dynamique: " + id;
     }
     @MethodeAnnotation(value = "/etudiant/numero")
-    public String etudiant(int id)
+    public String etudiantParNumero(int id)
     {
-        return "étudiant numéro " + id;
+        return "Étudiant numéro (formulaire): " + id;
+    }
+    @MethodeAnnotation(value = "/etudiant/numero")
+    public String etudiantNom(@RequestParam("nom") String nom)
+    {
+        return "étudiant numéro " + nom;
     }
 }
