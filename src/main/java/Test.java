@@ -52,4 +52,22 @@ public class Test {
     {
         return "étudiant numéro " + nom;
     }
+
+    // --- DEMANDE: Trois méthodes, même URL, différentes annotations ---
+    @MethodeAnnotation("/demo/multi")
+    @GetMapping
+    public String demoMultiGet() {
+        return "GET: Vous avez appelé la méthode annotée avec @GetMapping !";
+    }
+
+    @MethodeAnnotation("/demo/multi")
+    @PostMapping
+    public String demoMultiPost() {
+        return "POST: Vous avez appelé la méthode annotée avec @PostMapping !";
+    }
+
+    @MethodeAnnotation("/demo/multi")
+    public String demoMultiAll() {
+        return "ALL: Vous avez appelé la méthode annotée avec @MethodeAnnotation (tous types de requêtes) !";
+    }
 }

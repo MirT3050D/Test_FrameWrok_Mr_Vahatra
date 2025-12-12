@@ -240,8 +240,12 @@
                     </div>
                     
                     <div class="cta">
-                        <button class="btn">Commencer</button>
-                        <button class="btn ghost">Voir le code</button>
+                        <!-- Liens et formulaire pour tester les trois méthodes /demo/multi -->
+                        <a href="<%= request.getContextPath() %>/demo/multi" class="btn">Tester GET (@GetMapping)</a>
+                        <form action="<%= request.getContextPath() %>/demo/multi" method="post" style="display:inline">
+                            <button type="submit" class="btn">Tester POST (@PostMapping)</button>
+                        </form>
+                        <a href="<%= request.getContextPath() %>/demo/multi?force=all" class="btn ghost">Tester ALL (@MethodeAnnotation)</a>
                     </div>
                 </div>
 
