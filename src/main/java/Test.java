@@ -84,4 +84,16 @@ public class Test {
     public String demoMultiAll() {
         return "ALL: Vous avez appelé la méthode annotée avec @MethodeAnnotation (tous types de requêtes) !";
     }
+    @MethodeAnnotation("/etudiant/test-ok")
+    @PostMapping
+    public String createEtudiantOK(Etudiant etu) {
+        return "[OK] " + etu.toString();
+    }
+
+    @MethodeAnnotation("/etudiant/test-erreur")
+    @PostMapping
+    public String createEtudiantErreur(Etudiant etu) {
+        // On suppose que le formulaire n'envoie pas le champ 'email' : doit lever une erreur
+        return "[ERREUR] " + etu.toString();
+    }
 }

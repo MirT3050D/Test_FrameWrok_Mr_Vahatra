@@ -183,10 +183,9 @@ public class FrontServlet extends HttpServlet {
                         for (int i = 0; i < paramTypes.length; i++) {
                             Class<?> paramType = paramTypes[i];
                             java.lang.reflect.Parameter parameter = parameters[i];
-                            // Si Map<String, Object> attendu, construire à partir des paramètres du formulaire
+                            // Map<String, Object> (formulaire complet)
                             if (Map.class.isAssignableFrom(paramType)) {
                                 Map<String, Object> paramMap = new HashMap<>();
-                                // Ajoute tous les paramètres du formulaire (name/value)
                                 Map<String, String[]> paramValues = req.getParameterMap();
                                 for (Map.Entry<String, String[]> entry : paramValues.entrySet()) {
                                     String key = entry.getKey();
@@ -203,27 +202,37 @@ public class FrontServlet extends HttpServlet {
                             if (List.class.isAssignableFrom(paramType) || paramType.isArray()) {
                                 continue;
                             }
-                            String paramName;
-                            if (parameter.isAnnotationPresent(RequestParam.class)) {
-                                RequestParam reqParam = parameter.getAnnotation(RequestParam.class);
-                                paramName = reqParam.value();
-                            } else {
-                                paramName = parameter.getName();
+                            // Type simple (String, int, ...)
+                            if (isSimpleType(paramType)) {
+                                String paramName;
+                                if (parameter.isAnnotationPresent(RequestParam.class)) {
+                                    RequestParam reqParam = parameter.getAnnotation(RequestParam.class);
+                                    paramName = reqParam.value();
+                                } else {
+                                    paramName = parameter.getName();
+                                }
+                                String value = null;
+                                if (urlParams != null && urlParams.containsKey(paramName)) {
+                                    value = urlParams.get(paramName);
+                                }
+                                if (value == null || value.isEmpty()) {
+                                    value = req.getParameter(paramName);
+                                }
+                                if (value == null || value.isEmpty()) {
+                                    throw new IllegalArgumentException("Paramètre obligatoire manquant: " + paramName);
+                                }
+                                try {
+                                    args[i] = convertParameter(value, paramType);
+                                } catch (Exception e) {
+                                    throw new IllegalArgumentException("Impossible de convertir le paramètre '" + paramName + "' (valeur: '" + value + "') en type " + paramType.getSimpleName(), e);
+                                }
+                                continue;
                             }
-                            String value = null;
-                            if (urlParams != null && urlParams.containsKey(paramName)) {
-                                value = urlParams.get(paramName);
-                            }
-                            if (value == null || value.isEmpty()) {
-                                value = req.getParameter(paramName);
-                            }
-                            if (value == null || value.isEmpty()) {
-                                throw new IllegalArgumentException("Paramètre obligatoire manquant: " + paramName);
-                            }
+                            // Objet complexe : construction automatique
                             try {
-                                args[i] = convertParameter(value, paramType);
+                                args[i] = buildObjectFromRequest(paramType, parameter, req, "");
                             } catch (Exception e) {
-                                throw new IllegalArgumentException("Impossible de convertir le paramètre '" + paramName + "' (valeur: '" + value + "') en type " + paramType.getSimpleName(), e);
+                                throw new IllegalArgumentException("Impossible de construire l'objet " + paramType.getSimpleName() + " : " + e.getMessage(), e);
                             }
                         }
                         result = foundMethodRef.invoke(target, args);
@@ -295,6 +304,63 @@ public class FrontServlet extends HttpServlet {
             return Byte.parseByte(value);
         }
         throw new IllegalArgumentException("Type non supporté: " + targetType.getName());
+    }
+    
+    /**
+     * Construit un objet complexe à partir des paramètres du formulaire (récursif, supporte héritage, @RequestParam, champs imbriqués)
+     */
+    private Object buildObjectFromRequest(Class<?> clazz, java.lang.reflect.Parameter parameter, HttpServletRequest req, String prefix) throws Exception {
+        // Recherche le constructeur avec le plus de paramètres
+        java.lang.reflect.Constructor<?>[] constructors = clazz.getConstructors();
+        java.lang.reflect.Constructor<?> bestCtor = null;
+        int maxParams = -1;
+        for (java.lang.reflect.Constructor<?> ctor : constructors) {
+            if (ctor.getParameterCount() > maxParams) {
+                bestCtor = ctor;
+                maxParams = ctor.getParameterCount();
+            }
+        }
+        if (bestCtor == null) throw new IllegalArgumentException("Aucun constructeur public trouvé pour " + clazz.getName());
+        java.lang.reflect.Parameter[] ctorParams = bestCtor.getParameters();
+        Object[] args = new Object[ctorParams.length];
+        for (int i = 0; i < ctorParams.length; i++) {
+            java.lang.reflect.Parameter ctorParam = ctorParams[i];
+            Class<?> paramType = ctorParam.getType();
+            String paramName;
+            if (ctorParam.isAnnotationPresent(annotation.RequestParam.class)) {
+                paramName = ctorParam.getAnnotation(annotation.RequestParam.class).value();
+            } else {
+                paramName = ctorParam.getName();
+            }
+            String fullName = (prefix != null && !prefix.isEmpty()) ? (prefix + "." + paramName) : paramName;
+            if (isSimpleType(paramType)) {
+                String value = req.getParameter(fullName);
+                if (value == null || value.isEmpty()) {
+                    throw new IllegalArgumentException("Paramètre obligatoire manquant: " + fullName);
+                }
+                args[i] = convertParameter(value, paramType);
+            } else {
+                // Objet imbriqué
+                args[i] = buildObjectFromRequest(paramType, ctorParam, req, fullName);
+            }
+        }
+        return bestCtor.newInstance(args);
+    }
+
+    /**
+     * Détermine si le type est simple (String, primitive, wrapper)
+     */
+    private boolean isSimpleType(Class<?> type) {
+        return type.isPrimitive() ||
+                type == String.class ||
+                type == Integer.class ||
+                type == Long.class ||
+                type == Double.class ||
+                type == Float.class ||
+                type == Boolean.class ||
+                type == Short.class ||
+                type == Byte.class ||
+                type == Character.class;
     }
     
     // Classe interne pour stocker les informations de route
