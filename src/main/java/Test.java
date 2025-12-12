@@ -1,9 +1,23 @@
 package test;
+import java.util.Map;
 import annotation.*;
 import modelview.ModelView;
 import scan.*;
 @ClasseAnnotation(value = "Test de l'annotation de classe")
 public class Test {
+        @MethodeAnnotation("/etudiant/create")
+        @PostMapping
+        public boolean createEtudiant(Map<String, Object> data) {
+            String nom = (String) data.get("nom");
+            String prenom = (String) data.get("prenom");
+            int age = 0;
+            try {
+                age = Integer.parseInt((String) data.get("age"));
+            } catch (Exception e) {}
+            String email = (String) data.get("email");
+            Etudiant etu = new Etudiant(nom, prenom, age, email);
+            return true;
+        }
     public Test(){}
     @MethodeAnnotation(value = "/test")
     public static String compter()
