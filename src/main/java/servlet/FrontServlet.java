@@ -14,6 +14,8 @@ import java.util.List;
 import modelview.ModelView;
 import annotation.MethodeAnnotation;
 import annotation.RequestParam;
+import annotation.Api;
+import util.JsonUtil;
 import java.util.Set;
 import scan.ClassPathScanner;
 import servlet.UrlMatcher;
@@ -160,9 +162,8 @@ public class FrontServlet extends HttpServlet {
             }
         }
 
-        resp.setContentType("text/html;charset=UTF-8");
+        boolean apiEnabled = (selectedRoute != null) && (selectedRoute.method.isAnnotationPresent(annotation.Api.class) || selectedRoute.cls.isAnnotationPresent(annotation.Api.class));
         try (PrintWriter out = resp.getWriter()) {
-            out.println("<html><head><title>Test</title></head><body><h1>Check d'url </h1>");
             if (selectedRoute != null) {
                 try {
                     Method foundMethodRef = selectedRoute.method;
@@ -237,6 +238,27 @@ public class FrontServlet extends HttpServlet {
                         }
                         result = foundMethodRef.invoke(target, args);
                     }
+
+                    if (apiEnabled) {
+                        Map<String, Object> envelope = new HashMap<>();
+                        envelope.put("status", "success");
+                        envelope.put("code", HttpServletResponse.SC_OK);
+                        Object dataObj = null;
+                        if (result instanceof ModelView) {
+                            ModelView modelView = (ModelView) result;
+                            dataObj = modelView.getData() != null ? modelView.getData() : new HashMap<>();
+                        } else if (result == null) {
+                            dataObj = new HashMap<>();
+                        } else {
+                            dataObj = result;
+                        }
+                        envelope.put("data", dataObj);
+                        resp.setContentType("application/json;charset=UTF-8");
+                        out.print(JsonUtil.toJson(envelope));
+                        return;
+                    }
+
+                    // Non-API behavior: keep HTML rendering as before
                     if (result instanceof ModelView) {
                         ModelView modelView = (ModelView) result;
                         String view = modelView.getView();
@@ -252,27 +274,72 @@ public class FrontServlet extends HttpServlet {
                             return;
                         }
                     } else if (result instanceof String) {
+                        resp.setContentType("text/html;charset=UTF-8");
+                        out.println("<html><head><title>Test</title></head><body><h1>Check d'url </h1>");
                         out.println("<h2>Résultat</h2>");
                         out.println("<p>" + (String) result + "</p>");
+                        out.println("</body></html>");
+                        return;
                     } else {
+                        resp.setContentType("text/html;charset=UTF-8");
+                        out.println("<html><head><title>Test</title></head><body><h1>Check d'url </h1>");
                         out.println("<h2>Route trouvée</h2>");
                         out.println("<p>Classe: " + foundClassRef.getName() + "</p>");
                         out.println("<p>Méthode: " + foundMethodRef.getName() + "</p>");
+                        out.println("</body></html>");
+                        return;
                     }
                 } catch (IllegalArgumentException argError) {
-                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                    out.println("<h2>400 - Paramètre invalide</h2>");
-                    out.println("<p>" + argError.getMessage() + "</p>");
+                    if (apiEnabled) {
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        Map<String, Object> err = new HashMap<>();
+                        err.put("status", "error");
+                        err.put("code", HttpServletResponse.SC_BAD_REQUEST);
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("message", argError.getMessage());
+                        err.put("data", data);
+                        resp.setContentType("application/json;charset=UTF-8");
+                        out.print(JsonUtil.toJson(err));
+                        return;
+                    } else {
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        resp.setContentType("text/html;charset=UTF-8");
+                        out.println("<html><head><title>Test</title></head><body><h1>Check d'url </h1>");
+                        out.println("<h2>400 - Paramètre invalide</h2>");
+                        out.println("<p>" + argError.getMessage() + "</p>");
+                        out.println("</body></html>");
+                        return;
+                    }
                 } catch (Throwable invokeError) {
-                    resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    out.println("<h2>500 - Erreur invocation</h2>");
-                    out.println("<pre>" + invokeError + "</pre>");
+                    if (apiEnabled) {
+                        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        Map<String, Object> err = new HashMap<>();
+                        err.put("status", "error");
+                        err.put("code", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("message", String.valueOf(invokeError));
+                        err.put("data", data);
+                        resp.setContentType("application/json;charset=UTF-8");
+                        out.print(JsonUtil.toJson(err));
+                        return;
+                    } else {
+                        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        resp.setContentType("text/html;charset=UTF-8");
+                        out.println("<html><head><title>Test</title></head><body><h1>Check d'url </h1>");
+                        out.println("<h2>500 - Erreur invocation</h2>");
+                        out.println("<pre>" + invokeError + "</pre>");
+                        out.println("</body></html>");
+                        return;
+                    }
                 }
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.setContentType("text/html;charset=UTF-8");
+                out.println("<html><head><title>Test</title></head><body><h1>Check d'url </h1>");
                 out.println("<h2>404 - Not found</h2>");
+                out.println("</body></html>");
+                return;
             }
-            out.println("</body></html>");
         }
     }
 
