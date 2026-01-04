@@ -247,6 +247,13 @@
                         </form>
                         <a href="<%= request.getContextPath() %>/demo/multi?force=all" class="btn ghost">Tester ALL (@MethodeAnnotation)</a>
                     </div>
+
+                    <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+                        <a href="<%= request.getContextPath() %>/upload.jsp" class="btn">Formulaire d'upload</a>
+                        <a href="<%= request.getContextPath() %>/api/account?id=1" class="btn">API: /api/account?id=1</a>
+                        <a href="<%= request.getContextPath() %>/api/accounts" class="btn">API: /api/accounts</a>
+                        <a href="<%= request.getContextPath() %>/api/modelview" class="btn ghost">API: /api/modelview</a>
+                    </div>
                 </div>
 
                 <aside class="preview" aria-label="Aperçu">

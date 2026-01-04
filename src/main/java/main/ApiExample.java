@@ -36,6 +36,23 @@ public class ApiExample {
     }
 
     @Api
+    @MethodeAnnotation("/api/upload")
+    @PostMapping
+    public java.util.Map<String, Object> uploadFile(@RequestParam("file") FileUpload file, @RequestParam("desc") String desc) {
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        if (file != null) {
+            res.put("filename", file.getFilename());
+            res.put("size", file.getSize());
+            res.put("contentType", file.getContentType());
+            res.put("desc", desc != null ? desc : "");
+            res.put("savedPath", file.getSavedPath());
+        } else {
+            res.put("status", "no_file");
+        }
+        return res;
+    }
+
+    @Api
     @MethodeAnnotation("/api/modelview")
     @GetMapping
     public modelview.ModelView mvExample() {
