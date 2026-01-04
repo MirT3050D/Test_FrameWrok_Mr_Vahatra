@@ -1,12 +1,14 @@
 package main;
 
 import annotation.MethodeAnnotation;
+import annotation.ClasseAnnotation;
 import annotation.GetMapping;
 import annotation.PostMapping;
 import annotation.RequestParam;
 import annotation.Api;
 import java.util.*;
 
+@ClasseAnnotation("ApiExample controller")
 public class ApiExample {
 
     @Api
@@ -37,12 +39,10 @@ public class ApiExample {
     @MethodeAnnotation("/api/modelview")
     @GetMapping
     public modelview.ModelView mvExample() {
-        modelview.ModelView mv = new modelview.ModelView();
-        mv.setView("/etudiant-test-ok.jsp");
         Map<String, Object> data = new HashMap<>();
         data.put("id", 123);
         data.put("name", "mvName");
-        mv.setData(data);
+        modelview.ModelView mv = new modelview.ModelView("/etudiant-test-ok.jsp", data);
         return mv;
     }
 }
