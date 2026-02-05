@@ -254,6 +254,14 @@
                         <a href="<%= request.getContextPath() %>/api/accounts" class="btn">API: /api/accounts</a>
                         <a href="<%= request.getContextPath() %>/api/modelview" class="btn ghost">API: /api/modelview</a>
                     </div>
+                    <div style="margin-top:10px;">
+                        <form action="<%= request.getContextPath() %>/api/uploadRaw" method="post" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;">
+                            <input type="file" name="file" required />
+                            <input type="text" name="filename" placeholder="filename (optionnel)" />
+                            <input type="text" name="desc" placeholder="desc (optionnel)" />
+                            <button class="btn" type="submit">Upload raw (byte[])</button>
+                        </form>
+                    </div>
                 </div>
 
                 <aside class="preview" aria-label="Aperçu">

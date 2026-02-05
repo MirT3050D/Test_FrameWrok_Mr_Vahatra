@@ -71,7 +71,6 @@ Commandes de test rapides
 -------------------------
 Formulaire : ouvrir `http://localhost:8082<YOUR_CONTEXT>/upload.jsp`
 Curl :
-```
 curl -i -F "file=@/chemin/vers/fichier.txt" -F "desc=optionnel" "http://localhost:8082<YOUR_CONTEXT>/api/upload"
 ```
 

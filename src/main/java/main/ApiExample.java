@@ -53,6 +53,35 @@ public class ApiExample {
     }
 
     @Api
+    @MethodeAnnotation("/api/uploadRaw")
+    @PostMapping
+    public java.util.Map<String, Object> uploadRaw(@RequestParam("file") byte[] fileContent, @RequestParam("filename") String filename, @RequestParam("desc") String desc) {
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        if (fileContent != null) {
+            String name = (filename != null && !filename.isEmpty()) ? filename : ("upload_" + System.currentTimeMillis());
+            main.FileUpload fu = new main.FileUpload(fileContent, name, "application/octet-stream", fileContent.length);
+            // Try to save to fallback uploads folder (user.dir/uploads)
+            try {
+                java.io.File dir = new java.io.File(System.getProperty("user.dir"), "uploads");
+                if (!dir.exists()) dir.mkdirs();
+                java.io.File target = new java.io.File(dir, name);
+                java.nio.file.Files.write(target.toPath(), fileContent);
+                fu.setSavedPath(target.getAbsolutePath());
+            } catch (Throwable t) {
+                fu.setSavedPath(null);
+            }
+            res.put("filename", fu.getFilename());
+            res.put("size", fu.getSize());
+            res.put("contentType", fu.getContentType());
+            res.put("desc", desc != null ? desc : "");
+            res.put("savedPath", fu.getSavedPath());
+        } else {
+            res.put("status", "no_file");
+        }
+        return res;
+    }
+
+    @Api
     @MethodeAnnotation("/api/modelview")
     @GetMapping
     public modelview.ModelView mvExample() {
