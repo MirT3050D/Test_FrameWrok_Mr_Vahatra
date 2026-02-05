@@ -1,0 +1,77 @@
+sprint10
+
+Objectif
+-------
+Ajouter une fonctionnalité d'upload de fichier via multipart/form-data et exposer un endpoint API retournant une enveloppe JSON standardisée.
+
+Résumé technique
+---------------
+1) Activation multipart
+   - `FrontServlet` est annoté avec `@MultipartConfig(fileSizeThreshold=0, maxFileSize=10485760, maxRequestSize=10485760)` pour activer la lecture des parts et limiter la taille à 10MB.
+
+2) Lecture des parts et construction de `FileUpload`
+   - Dans `FrontServlet.customServe(...)` la requête est détectée comme multipart si `req.getContentType()` commence par `multipart/`.
+   - On appelle `req.getParts()` et on parcourt les `Part`.
+   - Pour chaque `Part` représentant un fichier (`part.getSubmittedFileName() != null`) on lit le flux via `part.getInputStream().readAllBytes()` et on crée un objet `main.FileUpload` contenant :
+       - `byte[] content` (les octets du fichier)
+       - `String filename` (nom soumis)
+       - `String contentType`
+       - `long size`
+       - `String savedPath` (chemin où le fichier a été sauvegardé, initialement null)
+
+3) Sauvegarde sur disque (avec fallback)
+   - Tentative d'écriture dans le répertoire webapp `getRealPath("/uploads")` si disponible.
+   - Si `getRealPath` retourne `null`, on sauvegarde dans `<user.dir>/uploads` (répertoire courant JVM) comme fallback.
+   - Si l'écriture réussit, on renseigne `savedPath` dans l'objet `FileUpload`.
+   - Les erreurs d'écriture sont logguées via `System.out.println` pour diagnostic, mais ne cassent pas le flux (la réponse inclura `savedPath=null`).
+
+4) Gestion de la taille
+   - Avant lecture, on vérifie `part.getSize()` et si > 10MB on renvoie une erreur 413.
+   - Pour les endpoints annotés `@Api`, l'erreur est renvoyée en JSON `{status:"error", code:413, data:{message: "Fichier trop volumineux (max 10MB)"}}`.
+
+5) Binding des paramètres des méthodes contrôleur
+   - Les `FileUpload` produits sont stockés dans une map `uploadedFiles` indexée par le nom du champ (ex. `file`).
+   - Lors de l'invocation par réflexion de la méthode du contrôleur, si la requête est multipart et que le paramètre attendu est :
+       - `byte[]` → on transmet `first.getContent()`
+       - `main.FileUpload` → on transmet l'objet `FileUpload`
+       - `main.FileUpload[]` ou `List<FileUpload>` → on transmet le tableau/liste complet(e)
+   - Pour les types simples (String, int, etc.) on utilise `req.getParameter(...)` comme avant.
+
+6) Endpoint d'exemple
+   - `src/main/java/main/ApiExample.java` contient `POST /api/upload` (annoté `@Api`) prenant `@RequestParam("file") FileUpload file` et `@RequestParam("desc") String desc`.
+   - Le contrôleur renvoie une `Map` contenant : `filename`, `size`, `contentType`, `desc`, `savedPath`.
+   - Parce que la méthode est `@Api`, `FrontServlet` enveloppe la réponse en JSON : `{status:"success", code:200, data: <map>}`.
+
+7) Sérialisation JSON
+   - J'ai ajouté `util.JsonUtil` : un sérialiseur minimal sans dépendance externe (supporte maps, collections, tableaux, beans par introspection des champs publics/privés).
+
+8) Formulaire de test
+   - `src/main/webapp/upload.jsp` : formulaire `multipart/form-data` qui POST vers `/api/upload` avec champ `file` et `desc`.
+   - `src/main/webapp/test.jsp` : liens rapides vers le formulaire et endpoints de test.
+
+Où se trouve le `byte[]` ?
+-------------------------
+- Le `byte[]` est stocké dans `main.FileUpload.content` et accessible via `FileUpload.getContent()` (fichier : `src/main/java/main/FileUpload.java`).
+- Lors du binding automatique, si la signature du contrôleur demande `byte[]`, `FrontServlet` place directement ce tableau dans l'argument.
+
+Points à vérifier si rien n'apparait dans `uploads/`
+--------------------------------------------------
+1) Vérifiez la valeur `savedPath` renvoyée dans la réponse JSON : si `null`, la sauvegarde a échoué.
+2) Vérifiez la sortie console du serveur pour les logs `"[upload] failed to save file '...' -> ..."`.
+3) Confirmez que le champ du formulaire s'appelle bien `file` (sinon le binding par nom ne trouvera rien).
+4) Vérifiez le dossier de fallback : `<user.dir>/uploads` si `getRealPath` est `null` (utile pour exécutions depuis IDE ou Server qui n'expose pas de realPath).
+
+Améliorations possibles
+----------------------
+- Ajouter logging plus verbeux (uploadsPath, submittedFileName, exceptions) dans `FrontServlet`.
+- Retourner l'URL publique du fichier si vous voulez y accéder via HTTP (nécessite mapping statique de `uploads/`).
+- Remplacer `JsonUtil` par Jackson/Gson pour un meilleur support des cas complexes.
+
+Commandes de test rapides
+-------------------------
+Formulaire : ouvrir `http://localhost:8082<YOUR_CONTEXT>/upload.jsp`
+Curl :
+curl -i -F "file=@/chemin/vers/fichier.txt" -F "desc=optionnel" "http://localhost:8082<YOUR_CONTEXT>/api/upload"
+```
+
+Fin de sprint10
