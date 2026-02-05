@@ -15,6 +15,7 @@ import modelview.ModelView;
 import annotation.MethodeAnnotation;
 import annotation.RequestParam;
 import annotation.Api;
+import annotation.Session;
 import util.JsonUtil;
 import java.util.Set;
 import scan.ClassPathScanner;
@@ -172,6 +173,8 @@ public class FrontServlet extends HttpServlet {
                     Object target = null;
                     if (!Modifier.isStatic(foundMethodRef.getModifiers())) {
                         target = foundClassRef.getDeclaredConstructor().newInstance();
+                        // Synchronisation AVANT: injection des variables de session dans les Map annotées @Session
+                        syncSessionToMaps(target, req.getSession());
                     }
 
                     Object result = null;
@@ -239,6 +242,10 @@ public class FrontServlet extends HttpServlet {
                         result = foundMethodRef.invoke(target, args);
                     }
 
+                    // Synchronisation APRES: recopier les Map annotées @Session dans la HttpSession
+                    if (target != null) {
+                        syncMapsToSession(target, req.getSession());
+                    }
                     if (apiEnabled) {
                         Map<String, Object> envelope = new HashMap<>();
                         envelope.put("status", "success");
@@ -445,4 +452,62 @@ public class FrontServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Synchronise toutes les Map<String, Object> annotées @Session avec la HttpSession (copie de la session vers le Map)
+     */
+    private void syncSessionToMaps(Object controller, HttpSession session) {
+        if (controller == null || session == null) return;
+        Class<?> clazz = controller.getClass();
+        java.lang.reflect.Field[] fields = clazz.getDeclaredFields();
+        for (java.lang.reflect.Field field : fields) {
+            if (field.isAnnotationPresent(Session.class)
+                && Map.class.isAssignableFrom(field.getType())) {
+                field.setAccessible(true);
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> map = (Map<String, Object>) field.get(controller);
+                    if (map == null) {
+                        map = new HashMap<>();
+                        field.set(controller, map);
+                    }
+                    // Copier toutes les variables de session dans le Map
+                    map.clear();
+                    java.util.Enumeration<String> names = session.getAttributeNames();
+                    while (names.hasMoreElements()) {
+                        String key = names.nextElement();
+                        map.put(key, session.getAttribute(key));
+                    }
+                } catch (Exception e) {
+                    // log ou ignorer
+                }
+            }
+        }
+    }
+
+    /**
+     * Synchronise toutes les Map<String, Object> annotées @Session avec la HttpSession (copie du Map vers la session)
+     */
+    private void syncMapsToSession(Object controller, HttpSession session) {
+        if (controller == null || session == null) return;
+        Class<?> clazz = controller.getClass();
+        java.lang.reflect.Field[] fields = clazz.getDeclaredFields();
+        for (java.lang.reflect.Field field : fields) {
+            if (field.isAnnotationPresent(Session.class)
+                && Map.class.isAssignableFrom(field.getType())) {
+                field.setAccessible(true);
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> map = (Map<String, Object>) field.get(controller);
+                    if (map != null) {
+                        // Mettre à jour la session avec toutes les entrées du Map
+                        for (Map.Entry<String, Object> entry : map.entrySet()) {
+                            session.setAttribute(entry.getKey(), entry.getValue());
+                        }
+                    }
+                } catch (Exception e) {
+                    // log ou ignorer
+                }
+            }
+        }
+    }
 }
